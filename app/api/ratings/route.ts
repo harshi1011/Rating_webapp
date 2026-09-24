@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 const MAX_COMMENT_LENGTH = 500;
 
 export async function POST(request: Request) {
