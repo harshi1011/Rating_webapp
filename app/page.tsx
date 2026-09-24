@@ -128,10 +128,6 @@ export default function Home() {
         <p className="text-slate-400 mt-2 text-sm md:text-[15px]">
           Anonymous late-night overthinking — read, rate how weird it is 1–5.
         </p>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow shadow-emerald-400/50" />
-          No login required — just overthinking
-        </div>
       </header>
 
       {loading && (
