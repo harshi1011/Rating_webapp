@@ -17,3 +17,8 @@ out
 .vercel
 # keep example
 !.env.example
+
+env_input.txt
+scripts/temp-check.mjs
+scripts/check-local-8*
+scripts/check-thoughts-prod.mjs
