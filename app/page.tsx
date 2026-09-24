@@ -37,7 +37,6 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [perThoughtSuccess, setPerThoughtSuccess] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [finalLoading, setFinalLoading] = useState(false);
@@ -58,7 +57,6 @@ export default function Home() {
       setThought(json.thought);
       setQuestionNumber(json.questionNumber);
       setIsFinal(json.isFinal);
-      setPerThoughtSuccess(null);
       setRating(null);
       setComment("");
       setHoverRating(null);
@@ -114,29 +112,24 @@ export default function Home() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to submit rating");
 
-      // show per-thought success with user's rating (no community)
-      setPerThoughtSuccess(rating);
-
       if (json.finished) {
-        // was final thought — no next thought, show final result
+        // was final thought — show final result
         await fetchFinalResult();
+      } else {
+        // directly replace current thought with next thought in same card
+        setThought(json.nextThought);
+        setQuestionNumber(json.questionNumber);
+        setIsFinal(json.isFinal);
+        setRating(null);
+        setComment("");
+        setHoverRating(null);
+        setSubmitError(null);
       }
-      // otherwise we stay on success screen with Next Thought button that will load next thought
     } catch (e: any) {
       setSubmitError(e.message || "Failed to submit rating");
     } finally {
       setSubmitting(false);
     }
-  }
-
-  async function handleNext() {
-    // load next thought from session
-    setPerThoughtSuccess(null);
-    setRating(null);
-    setComment("");
-    setHoverRating(null);
-    setSubmitError(null);
-    await fetchSession();
   }
 
   const displayRating = hoverRating ?? rating;
@@ -200,16 +193,11 @@ export default function Home() {
 
   if (!thought) return null;
 
-  const isPerThoughtDone = perThoughtSuccess !== null;
-
   return (
     <main className="max-w-2xl mx-auto px-5 py-8 md:py-10">
       <header className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">🌙 MY NOT-SO-WEIRD <span className="bg-gradient-to-r from-indigo-400 to-cyan-300 bg-clip-text text-transparent">3 AM</span> THOUGHTS</h1>
-        <p className="text-slate-400 mt-2 text-sm">Question {questionNumber} of 3 — {isFinal ? "final thought" : "keep going"}</p>
-        <div className="mt-2 flex justify-center gap-1">
-          {[1,2,3].map(n=> <span key={n} className={`h-2 w-6 rounded-full ${n <= questionNumber ? "bg-cyan-400" : n < questionNumber ? "bg-cyan-400" : "bg-white/10" } ${n===questionNumber && !isPerThoughtDone ? "ring-2 ring-white/20" : ""}`} />)}
-        </div>
+        <p className="text-slate-400 mt-2 text-sm">Anonymous late-night overthinking — read, rate how weird it is 1–5.</p>
       </header>
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 md:p-7 shadow-xl backdrop-blur">
@@ -220,44 +208,31 @@ export default function Home() {
         <blockquote className="mt-4 text-xl md:text-2xl font-medium leading-relaxed text-white">“{thought.content}”</blockquote>
         <div className="my-6 h-px bg-white/10" />
 
-        {!isPerThoughtDone ? (
-          <>
-            <p className="text-center text-sm font-semibold text-slate-300">How weird is this? <span className="text-cyan-300">1 = nah</span> · <span className="text-indigo-300">5 = ultra weird</span></p>
-            <div className="mt-3 flex justify-center gap-1.5 md:gap-2">
-              {[1,2,3,4,5].map(n=>{
-                const active = displayRating !== null && n <= displayRating;
-                const selected = rating !== null && n <= rating;
-                return (
-                  <button key={n} type="button" aria-label={`Rate ${n}`} onMouseEnter={()=>setHoverRating(n)} onMouseLeave={()=>setHoverRating(null)} onClick={()=>setRating(n)} disabled={submitting} className={`relative flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl border text-2xl transition ${active ? "border-amber-400/40 bg-amber-400/20 scale-105" : "border-white/10 bg-white/5 hover:bg-white/10"} ${selected ? "ring-2 ring-amber-400/30" : ""} disabled:opacity-60`}>
-                    <span className={active ? "text-amber-300" : "text-slate-500"}>⭐</span><span className="absolute -bottom-1 text-[10px] font-bold text-slate-400">{n}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-4 text-center text-xs text-slate-500 min-h-4">
-              {displayRating ? (displayRating===1?"Not weird at all":displayRating===2?"A little weird":displayRating===3?"Pretty weird":displayRating===4?"Very weird":"Ultra weird") : "Tap a star 1–5"}
-            </p>
-            <label className="mt-6 block">
-              <span className="text-sm font-medium text-slate-300">Optional comment</span>
-              <textarea value={comment} onChange={e=>setComment(e.target.value)} maxLength={500} rows={3} placeholder="e.g. Literally me at 2 AM..." disabled={submitting} className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#0f1530] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60" />
-              <span className="mt-1 block text-right text-xs text-slate-500">{comment.length}/500</span>
-            </label>
-            {submitError && <div className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">{submitError}</div>}
-            <button onClick={handleRate} disabled={submitting} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 py-3.5 font-bold text-white shadow-lg disabled:opacity-60">
-              {submitting ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />Submitting...</> : isFinal ? "Finish" : "Rate & Next Thought →"}
-            </button>
-          </>
-        ) : (
-          <div className="space-y-4 text-center">
-            {finalLoading ? (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-slate-400">Loading final result...</div>
-            ) : isFinal ? (
-              <p className="text-sm text-slate-400">You finished 3 thoughts — showing final verdict...</p>
-            ) : (
-              <button onClick={handleNext} className="w-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 py-3.5 font-bold text-white">Next Thought →</button>
-            )}
-          </div>
-        )}
+        <p className="text-center text-sm font-semibold text-slate-300">How weird is this? <span className="text-cyan-300">1 = nah</span> · <span className="text-indigo-300">5 = ultra weird</span></p>
+        <div className="mt-3 flex justify-center gap-1.5 md:gap-2">
+          {[1,2,3,4,5].map(n=>{
+            const active = displayRating !== null && n <= displayRating;
+            const selected = rating !== null && n <= rating;
+            return (
+              <button key={n} type="button" aria-label={`Rate ${n}`} onMouseEnter={()=>setHoverRating(n)} onMouseLeave={()=>setHoverRating(null)} onClick={()=>setRating(n)} disabled={submitting || finalLoading} className={`relative flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl border text-2xl transition ${active ? "border-amber-400/40 bg-amber-400/20 scale-105" : "border-white/10 bg-white/5 hover:bg-white/10"} ${selected ? "ring-2 ring-amber-400/30" : ""} disabled:opacity-60`}>
+                <span className={active ? "text-amber-300" : "text-slate-500"}>⭐</span><span className="absolute -bottom-1 text-[10px] font-bold text-slate-400">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-center text-xs text-slate-500 min-h-4">
+          {displayRating ? (displayRating===1?"Not weird at all":displayRating===2?"A little weird":displayRating===3?"Pretty weird":displayRating===4?"Very weird":"Ultra weird") : "Tap a star 1–5"}
+        </p>
+        <label className="mt-6 block">
+          <span className="text-sm font-medium text-slate-300">Optional comment</span>
+          <textarea value={comment} onChange={e=>setComment(e.target.value)} maxLength={500} rows={3} placeholder="e.g. Literally me at 2 AM..." disabled={submitting || finalLoading} className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#0f1530] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60" />
+          <span className="mt-1 block text-right text-xs text-slate-500">{comment.length}/500</span>
+        </label>
+        {submitError && <div className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">{submitError}</div>}
+        {finalLoading && <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-center text-slate-400">Loading final result...</div>}
+        <button onClick={handleRate} disabled={submitting || finalLoading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 py-3.5 font-bold text-white shadow-lg disabled:opacity-60">
+          {submitting || finalLoading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />{finalLoading ? "Loading..." : "Submitting..."}</> : isFinal ? "Finish" : "Next Thought"}
+        </button>
       </section>
 
       <footer className="mt-8 text-center text-xs text-slate-500">Backend tracks session • 3 unique thoughts • no repeats • finishes after 3</footer>
