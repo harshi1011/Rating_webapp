@@ -249,13 +249,6 @@ export default function Home() {
           </>
         ) : (
           <div className="space-y-4 text-center">
-            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-4">
-              <p className="text-xs uppercase tracking-widest text-emerald-300">Your rating</p>
-              <div className="mt-2 flex justify-center gap-1 text-xl">
-                {[1,2,3,4,5].map(n=> <span key={n} className={n <= (perThoughtSuccess||0) ? "opacity-100" : "opacity-20"}>⭐</span>)}
-              </div>
-              <p className="mt-1 font-semibold text-emerald-100">{perThoughtSuccess} / 5</p>
-            </div>
             {finalLoading ? (
               <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-slate-400">Loading final result...</div>
             ) : isFinal ? (
