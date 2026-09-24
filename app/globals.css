@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b1020;
+  --bg-soft: #111834;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  @apply bg-[#0b1020] text-slate-100 antialiased;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(109, 141, 255, 0.22), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(34, 211, 238, 0.16), transparent 60%),
+    #0b1020;
+  min-height: 100vh;
+}
